@@ -20,29 +20,32 @@ jobs:
           ndk-version: r26d
           link-to-sdk: true
 
-      - name: Download QNN SDK from HuggingFace
+      - name: Download & Setup QNN SDK (Doc Steps)
         run: |
-          mkdir -p /home/runner/qnn_sdk
-          cd /home/runner/qnn_sdk
-          # Download official QAIRT SDK mirror
-          wget -q https://huggingface.co/csukuangfj/sherpa-onnx-qnn/resolve/main/qairt-2.22.0.240424.zip -O qnn.zip
-          unzip -q qnn.zip
-          
-          # Root directory find aur export karein
-          QNN_DIR=$(find /home/runner/qnn_sdk -mindepth 1 -maxdepth 2 -type d -name "*2.22*" | head -n 1)
-          echo "Found QNN SDK at: $QNN_DIR"
-          echo "QNN_SDK_ROOT=$QNN_DIR" >> $GITHUB_ENV
+          mkdir -p $HOME/qnn
+          cd $HOME/qnn
 
-      - name: Build Android arm64 with QNN
+          # Documentation URL with Browser User-Agent header
+          wget --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
+            https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/2.40.0.251030/v2.40.0.251030.zip \
+            -O v2.40.0.251030.zip
+
+          unzip -q v2.40.0.251030.zip
+
+          # Documentation path match
+          export QNN_SDK_ROOT=$HOME/qnn/qairt/2.40.0.251030
+          echo "QNN_SDK_ROOT=$QNN_SDK_ROOT" >> $GITHUB_ENV
+
+      - name: Build Android ARM64 with QNN
         run: |
           export SHERPA_ONNX_ENABLE_QNN=ON
           export SHERPA_ONNX_ENABLE_BINARY=ON
           export QNN_SDK_ROOT=${{ env.QNN_SDK_ROOT }}
-          
+
           chmod +x ./build-android-arm64-v8a.sh
           ./build-android-arm64-v8a.sh
 
-      - name: Upload Compiled .so & Binaries
+      - name: Upload .so Libraries and Binaries
         uses: actions/upload-artifact@v4
         with:
           name: sherpa-onnx-android-qnn-arm64
