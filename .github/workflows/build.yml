@@ -1,4 +1,4 @@
-name: Build Sherpa-ONNX Android
+name: Build Sherpa-ONNX Android 15
 
 on:
   workflow_dispatch:
@@ -14,18 +14,33 @@ jobs:
           repository: 'k2-fsa/sherpa-onnx'
           submodules: recursive
 
-      - name: Run Build Script
+      - name: Setup Latest Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+          link-to-sdk: true
+
+      - name: Build Android ARM64 for Android 15
         run: |
+          # Android 15 (API 35) target karein
+          export ANDROID_PLATFORM=android-35
           export SHERPA_ONNX_ENABLE_NNAPI=ON
           export SHERPA_ONNX_ENABLE_BINARY=ON
+          
+          # Script ke andar target API 35 enforce karein
+          sed -i 's/android-21/android-35/g' ./build-android-arm64-v8a.sh
+          
+          # 16 KB Page size support flags add karein (Android 15 Requirement)
+          export CFLAGS="-Wl,-z,max-page-size=16384"
+          export CXXFLAGS="-Wl,-z,max-page-size=16384"
           
           chmod +x ./build-android-arm64-v8a.sh
           ./build-android-arm64-v8a.sh
 
-      - name: Upload .so Libraries and Executables
+      - name: Upload Android 15 Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: sherpa-onnx-arm64-v8a
+          name: sherpa-onnx-android15-arm64
           path: |
             build-android-arm64-v8a/install/lib/*
             build-android-arm64-v8a/install/bin/*
