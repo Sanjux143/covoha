@@ -1,0 +1,38 @@
+name: Build Sherpa-ONNX Android with QNN
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sherpa-onnx
+        uses: actions/checkout@v4
+        with:
+          repository: 'k2-fsa/sherpa-onnx'
+          submodules: recursive
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+          link-to-sdk: true
+
+      - name: Build Android arm64 with QNN
+        run: |
+          export SHERPA_ONNX_ENABLE_QNN=ON
+          export SHERPA_ONNX_ENABLE_BINARY=ON
+          
+          # Script run karein
+          ./build-android-arm64-v8a.sh
+
+      - name: Upload Compiled .so & Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: sherpa-onnx-android-qnn-arm64
+          path: |
+            build-android-arm64-v8a/install/lib/*
+            build-android-arm64-v8a/install/bin/*
+            
